@@ -50,9 +50,14 @@ fileprivate extension String {
         return firstDigit * 10 + lastDigit
     }
 }
-assert(partOneTestInput.reduce(into: 0, { result, line in result += line.getCalibrationValue() ?? 0 }) == 142)
-let calibrationValueSum = puzzleInput?.reduce(into: 0, { result, line in result += line.getCalibrationValue() ?? 0 })
-// Correct answer: 54927
+
+func getCalibrationValueSum(puzzleArray: [String]?) -> Int? {
+    return puzzleArray?.reduce(into: 0, { result, line in result += line.getCalibrationValue() ?? 0 })
+}
+
+assert(getCalibrationValueSum(puzzleArray: partOneTestInput) == 142)
+let calibrationValueSum = getCalibrationValueSum(puzzleArray: puzzleInput)
+// Correct answer: 54 927
 // MARK: --- Part Two ---
 /*
  Your calculation isn't quite right. It looks like some of the digits are actually spelled out with letters: one, two, three, four, five, six, seven, eight, and nine also count as valid "digits".
@@ -72,7 +77,7 @@ let calibrationValueSum = puzzleInput?.reduce(into: 0, { result, line in result 
  What is the sum of all of the calibration values?
 
  */
-let testinput = [
+let partTwoTestInput = [
     "two1nine",
     "eightwothree",
     "abcone2threexyz",
@@ -128,6 +133,9 @@ fileprivate extension String {
     }
 }
 
-assert(testinput.reduce(into: 0, { result, line in result += line.getCalibrationValue(accepting: digits) ?? 0}) == 281)
-let calibrationValueSumWithDigits = puzzleInput?.reduce(into: 0, { result, line in result += line.getCalibrationValue(accepting: digits) ?? 0})
-// Correct answer: 54581
+func getCalibrationValueSum(accepting digits: [String], puzzleArray: [String]?) -> Int? {
+    return puzzleArray?.reduce(into: 0, { result, line in result += line.getCalibrationValue(accepting: digits) ?? 0 })
+}
+assert(getCalibrationValueSum(accepting: digits, puzzleArray: partTwoTestInput) == 281)
+let calibrationValueSumWithDigits = getCalibrationValueSum(accepting: digits, puzzleArray: puzzleInput)
+// Correct answer: 54 581

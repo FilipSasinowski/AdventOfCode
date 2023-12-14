@@ -4,6 +4,18 @@ import Foundation
 let filePath = Bundle.main.path(forResource:"day02input", ofType: "txt")
 let contentData = FileManager.default.contents(atPath: filePath!)
 let puzzleInput = String(data: contentData!, encoding: .utf8)?.components(separatedBy: "\n")
+// helpers
+precedencegroup PowerPrecedence { higherThan: MultiplicationPrecedence }
+infix operator ^^ : PowerPrecedence
+func ^^ (radix: Int, power: Int) -> Int {
+    return Int(pow(Double(radix), Double(power)))
+}
+
+fileprivate extension String {
+    func calculateFirstNumber() -> Int {
+        return self.compactMap({ $0.wholeNumberValue }).reversed().enumerated().reduce(into: 0, { result, x in result += 10^^x.offset * x.element})
+    }
+}
 // MARK: --- Part One ---
 /*
  You're launched high into the atmosphere! 
@@ -47,3 +59,157 @@ let puzzleInput = String(data: contentData!, encoding: .utf8)?.components(separa
 
  To begin, get your puzzle input.
  */
+let partOneTestInput = [
+    "Game 1: 3 blue, 4 red; 1 red, 2 green, 6 blue; 2 green",
+    "Game 2: 1 blue, 2 green; 3 green, 4 blue, 1 red; 1 green, 1 blue",
+    "Game 3: 8 green, 6 blue, 20 red; 5 blue, 4 red, 13 green; 5 green, 1 red",
+    "Game 4: 1 green, 3 red, 6 blue; 3 green, 6 red; 3 green, 15 blue, 14 red",
+    "Game 5: 6 red, 1 blue, 3 green; 2 blue, 1 red, 2 green"
+]
+
+let maxValues: [(Game.Color, Int)] = [
+    (.red, 12),
+    (.green, 13),
+    (.blue, 14)
+]
+
+class Game {
+    let id: Int
+    let rounds: [Round]
+
+    init(line: String, maxValues: [(Color, Int)] = []) {
+        guard
+            let id = Game.getID(from: line),
+            let rounds = Game.getRounds(from: line, maxValues: maxValues)
+        else {
+            fatalError()
+        }
+        self.id = id
+        self.rounds = rounds
+    }
+    
+    struct Round {
+        let values: [(Color, Int)]
+        let illegal: Bool
+    }
+    enum Color: String {
+        case red
+        case green
+        case blue
+        
+        static let colorsArray = [Color.red, Color.green, Color.blue]
+    }
+    
+    private static func getID(from line: String) -> Int? {
+        guard let colonRange = line.range(of: ":") else { return nil }
+        var strippedSting = line
+        strippedSting.removeSubrange(colonRange.upperBound..<strippedSting.endIndex)
+        return strippedSting.calculateFirstNumber()
+    }
+    
+    private static func getRounds(from line: String, maxValues: [(Color, Int)]) -> [Round]? {
+        guard let colonRange = line.range(of: ":") else { return nil }
+        var strippedSting = line
+        strippedSting.removeSubrange(strippedSting.startIndex..<colonRange.upperBound)
+        let roundsStringArray = strippedSting.components(separatedBy: ";")
+        let rounds = roundsStringArray.map { round in
+            return Game.getRound(from: round.components(separatedBy: ","), maxValues: maxValues)
+        }
+        guard !rounds.isEmpty else { return nil }
+        return rounds
+    }
+    
+    private static func getRound(from lines: [String], maxValues: [(Color, Int)]) -> Round {
+        var valuesArray: [(Color, Int)] = []
+        var illegal = false
+        for line in lines {
+            let amount = line.calculateFirstNumber()
+            guard let color = Color.colorsArray.first(where: { line.hasSuffix($0.rawValue) }) else {
+                continue
+            }
+            if let maxValue = maxValues.first(where: { $0.0 == color })?.1, amount > maxValue { illegal = true }
+            valuesArray.append((color, amount))
+        }
+        return Round(values: valuesArray, illegal: illegal)
+    }
+}
+
+extension Game {
+    var illegal: Bool {
+        return rounds.contains(where: { $0.illegal })
+    }
+}
+
+func getSumOfGameIDs(gamesArray: [String]?) -> Int? {
+    return gamesArray?.reduce(into: 0) { partialResult, line in
+        if !line.isEmpty {
+            let game = Game(line: line, maxValues: maxValues)
+            partialResult += !game.illegal ? game.id : 0
+        }
+    }
+}
+assert(getSumOfGameIDs(gamesArray: partOneTestInput) == 8)
+let sumOfLegalGamesIDsReal = getSumOfGameIDs(gamesArray: puzzleInput)
+// MARK: --- Part Two ---
+/*
+ The Elf says they've stopped producing snow because they aren't getting any water! He isn't sure why the water stopped; however, he can show you how to get to the water source to check it out for yourself. It's just up ahead!
+
+ As you continue your walk, the Elf poses a second question: in each game you played, what is the fewest number of cubes of each color that could have been in the bag to make the game possible?
+
+ Again consider the example games from earlier:
+
+ Game 1: 3 blue, 4 red; 1 red, 2 green, 6 blue; 2 green
+ Game 2: 1 blue, 2 green; 3 green, 4 blue, 1 red; 1 green, 1 blue
+ Game 3: 8 green, 6 blue, 20 red; 5 blue, 4 red, 13 green; 5 green, 1 red
+ Game 4: 1 green, 3 red, 6 blue; 3 green, 6 red; 3 green, 15 blue, 14 red
+ Game 5: 6 red, 1 blue, 3 green; 2 blue, 1 red, 2 green
+
+     In game 1, the game could have been played with as few as 4 red, 2 green, and 6 blue cubes. If any color had even one fewer cube, the game would have been impossible.
+     Game 2 could have been played with a minimum of 1 red, 3 green, and 4 blue cubes.
+     Game 3 must have been played with at least 20 red, 13 green, and 6 blue cubes.
+     Game 4 required at least 14 red, 3 green, and 15 blue cubes.
+     Game 5 needed no fewer than 6 red, 3 green, and 2 blue cubes in the bag.
+
+ The power of a set of cubes is equal to the numbers of red, green, and blue cubes multiplied together. The power of the minimum set of cubes in game 1 is 48. In games 2-5 it was 12, 1560, 630, and 36, respectively. Adding up these five powers produces the sum 2286.
+
+ For each game, find the minimum set of cubes that must have been present. What is the sum of the power of these sets?
+
+ */
+let partTwoTestInput = [
+    "Game 1: 3 blue, 4 red; 1 red, 2 green, 6 blue; 2 green",
+    "Game 2: 1 blue, 2 green; 3 green, 4 blue, 1 red; 1 green, 1 blue",
+    "Game 3: 8 green, 6 blue, 20 red; 5 blue, 4 red, 13 green; 5 green, 1 red",
+    "Game 4: 1 green, 3 red, 6 blue; 3 green, 6 red; 3 green, 15 blue, 14 red",
+    "Game 5: 6 red, 1 blue, 3 green; 2 blue, 1 red, 2 green"
+]
+
+extension Game {
+    var minimumCubePower: Int {
+        let allValues = rounds.flatMap({ $0.values })
+        var red = 0, green = 0, blue = 0
+        for value in allValues {
+            switch value.0 {
+            case .red:
+                red = max(red, value.1)
+            case .green:
+                green = max(green, value.1)
+            case .blue:
+                blue = max(blue, value.1)
+            }
+        }
+        return red * green * blue
+    }
+}
+
+func getSumOfMinimumCubePowers(from puzzleArray: [String]?) -> Int? {
+    return puzzleArray?.reduce(into: 0) { partialResult, line in
+        if !line.isEmpty {
+            let game = Game(line: line)
+            partialResult += game.minimumCubePower
+        }
+    }
+}
+
+assert(getSumOfMinimumCubePowers(from: partTwoTestInput) == 2286)
+let sumOfCubePowers = getSumOfMinimumCubePowers(from: puzzleInput)
+// Correct answer: 56 322
