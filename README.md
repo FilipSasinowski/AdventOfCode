@@ -1,2 +1,5 @@
-# adventOfCode2023
-Advent of Code 2023 - Swift
+# Advent of Code
+Advent of Code - Swift
+
+This repository is for yearly Advent of Code event.
+Each playground contains challenges from given year with their respective days solutions found in its pages.
