@@ -1,5 +1,5 @@
 import Foundation
-// MARK:  --- Day 3: Gear Ratios ---
+// MARK:  --- Day 4: Scratchcards ---
 // setup puzzle input
 let filePath = Bundle.main.path(forResource:"day04input", ofType: "txt")
 let contentData = FileManager.default.contents(atPath: filePath!)
@@ -17,8 +17,6 @@ fileprivate extension String {
 }
 // MARK: --- Part One ---
 /*
- --- Day 4: Scratchcards ---
-
  The gondola takes you up. 
  Strangely, though, the ground doesn't seem to be coming with you; you're not climbing a mountain.
  As the circle of Snow Island recedes below you, an entire new landmass suddenly appears above you! 
@@ -129,6 +127,7 @@ assert(Lottery(puzzleInput: partOneTestInput).getSumOfAllGames() == 13)
 
 let lottery = Lottery(puzzleInput: puzzleInput)
 lottery.getSumOfAllGames()
+// Correct answer: 26 218
 // MARK:  --- Part Two ---
 /*
  Just as you're about to report your findings to the Elf, one of you realizes that the rules have actually been printed on the back of every card this whole time.
@@ -191,3 +190,4 @@ extension Lottery {
 
 assert(Lottery(puzzleInput: partTwoTestInput).sumAllScratchpads() == 30)
 lottery.sumAllScratchpads()
+// Correct answer: 9 997 537
